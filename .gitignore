@@ -60,3 +60,43 @@ fastlane/report.xml
 fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
+
+# API Keys and Sensitive Data
+# Add any files containing API keys or sensitive configuration
+*.env
+.env.local
+.env.production
+config.plist
+Secrets.plist
+
+# User-specific data
+# These files contain user preferences and should not be shared
+*.plist
+!Info.plist
+!*.plist.example
+
+# Build artifacts
+DerivedData/
+build/
+*.app
+
+# macOS specific
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+logs/
+
+# IDE specific
+.vscode/
+.idea/
+*.xcuserstate
