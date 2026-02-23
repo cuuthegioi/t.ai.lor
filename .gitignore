@@ -66,6 +66,7 @@ fastlane/test_output
 *.env
 .env.local
 .env.production
+Config.xcconfig
 config.plist
 Secrets.plist
 
