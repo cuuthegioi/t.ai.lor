@@ -1,5 +1,8 @@
 import Foundation
 
+/// Set to true to skip OpenAI and return a mock response (saves API usage).
+private let useMockResponse = true
+
 enum GPTError: Error {
     case missingApiKey
     case invalidResponse
@@ -10,6 +13,10 @@ enum GPTError: Error {
 private let gptModel = "gpt-4o-mini"
 
 func tailorWithGPT(text: String, apiKey: String?) async throws -> String {
+    if useMockResponse {
+        return mockTailoredResponse(for: text)
+    }
+
     guard let apiKey = apiKey?.trimmingCharacters(in: .whitespacesAndNewlines), !apiKey.isEmpty else {
         throw GPTError.missingApiKey
     }
@@ -49,4 +56,13 @@ func tailorWithGPT(text: String, apiKey: String?) async throws -> String {
     }
 
     return resultText.trimmingCharacters(in: .whitespacesAndNewlines)
+}
+
+/// Mock response for testing without calling OpenAI.
+private func mockTailoredResponse(for input: String) -> String {
+    let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
+    if trimmed.isEmpty {
+        return "(mock) No text to tailor."
+    }
+    return "[Mock] Here is your tailored text:\n\n\(trimmed)\n\n— (mock response; set useMockResponse = false to use the real API)"
 }
