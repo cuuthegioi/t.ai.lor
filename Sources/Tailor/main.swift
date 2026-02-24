@@ -9,9 +9,14 @@ private var hotkeyMonitor: Any?
 /// Optional loading panel shown while waiting for AI
 private var loadingPanel: NSPanel?
 
+/// Menu bar status item (retain so it stays visible)
+private var statusItem: NSStatusItem?
+
 func main() {
     let app = NSApplication.shared
     app.setActivationPolicy(.accessory)
+
+    setupMenuBar()
 
     hotkeyMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { event in
         let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
@@ -25,6 +30,41 @@ func main() {
     }
 
     app.run()
+}
+
+private func setupMenuBar() {
+    statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+    guard let button = statusItem?.button else { return }
+
+    if let image = NSImage(systemSymbolName: "scissors", accessibilityDescription: "Tailor") {
+        image.isTemplate = true
+        button.image = image
+    } else {
+        button.title = "Tailor"
+    }
+
+    let menu = NSMenu()
+    let item1 = NSMenuItem(title: "Tailor clipboard (⌘⌥Z)", action: #selector(MenuBarTarget.tailorClipboard), keyEquivalent: "")
+    item1.target = MenuBarTarget.shared
+    menu.addItem(item1)
+    menu.addItem(NSMenuItem.separator())
+    let item2 = NSMenuItem(title: "Quit", action: #selector(MenuBarTarget.quit), keyEquivalent: "q")
+    item2.target = MenuBarTarget.shared
+    menu.addItem(item2)
+
+    statusItem?.menu = menu
+}
+
+private class MenuBarTarget: NSObject {
+    static let shared = MenuBarTarget()
+
+    @objc func tailorClipboard() {
+        handleHotkey()
+    }
+
+    @objc func quit() {
+        NSApp.terminate(nil)
+    }
 }
 
 private func handleHotkey() {
