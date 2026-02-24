@@ -85,9 +85,9 @@ private func saveProvider(_ value: String) {
     UserDefaults.standard.set(value, forKey: providerKey)
 }
 
-/// API key: Keychain first (from "Set API Key"), then Config.xcconfig / environment.
+/// API key from Keychain (set via menu: Tailor → Set API Key…).
 private func resolvedAPIKey() -> String? {
-    KeychainStorage.loadAPIKey() ?? getConfig("API_KEY")
+    KeychainStorage.loadAPIKey()
 }
 
 private class MenuBarTarget: NSObject, NSMenuDelegate {
@@ -243,7 +243,7 @@ private func handleHotkey() {
                     if let gpt = error as? GPTError {
                         switch gpt {
                         case .missingApiKey:
-                            message = "Set your API key via the menu bar: Tailor → Set API Key… (or use Config.xcconfig)."
+                            message = "Set your API key via the menu bar: Tailor → Set API Key…"
                         case .invalidResponse:
                             message = "Invalid response from OpenAI."
                         case .networkError(let e):
@@ -252,7 +252,7 @@ private func handleHotkey() {
                     } else if let gemini = error as? GeminiError {
                         switch gemini {
                         case .missingApiKey:
-                            message = "Set your API key via the menu bar: Tailor → Set API Key… (or use Config.xcconfig)."
+                            message = "Set your API key via the menu bar: Tailor → Set API Key…"
                         case .invalidResponse:
                             message = "Invalid response from Gemini."
                         case .networkError(let e):
