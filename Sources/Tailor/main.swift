@@ -6,7 +6,7 @@ private let keyCodeZ: UInt16 = 6  // kVK_ANSI_Z
 /// Retain the global monitor so it stays active
 private var hotkeyMonitor: Any?
 
-/// Optional loading panel shown while waiting for Gemini
+/// Optional loading panel shown while waiting for AI
 private var loadingPanel: NSPanel?
 
 func main() {
@@ -35,10 +35,10 @@ private func handleHotkey() {
             return
         }
         showLoadingPanel()
-        let apiKey = getConfig("GEMINI_API_KEY")
+        let apiKey = getConfig("API_KEY")
         Task {
             do {
-                let result = try await tailorWithGemini(text: text, apiKey: apiKey)
+                let result = try await tailorWithGPT(text: text, apiKey: apiKey)
                 await MainActor.run {
                     hideLoadingPanel()
                     showModal(title: "Tailored", body: result)
@@ -47,12 +47,12 @@ private func handleHotkey() {
                 await MainActor.run {
                     hideLoadingPanel()
                     let message: String
-                    if let gemini = error as? GeminiError {
-                        switch gemini {
+                    if let gpt = error as? GPTError {
+                        switch gpt {
                         case .missingApiKey:
-                            message = "Set GEMINI_API_KEY in your environment (e.g. in ~/.zshrc or when running: GEMINI_API_KEY=your_key swift run Tailor)."
+                            message = "Set API_KEY in Config.xcconfig or in your environment (e.g. API_KEY=your_key swift run Tailor)."
                         case .invalidResponse:
-                            message = "Invalid response from Gemini."
+                            message = "Invalid response from OpenAI."
                         case .networkError(let e):
                             message = e.localizedDescription
                         }

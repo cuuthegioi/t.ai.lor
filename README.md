@@ -21,7 +21,7 @@ A macOS menu bar app that helps non-native English speakers improve their text u
 
 1. Clone the repository
 2. Open `Tailor.xcodeproj` in Xcode
-3. Add your Gemini API key to `GeminiService.swift`
+3. Add your API key to `Config.xcconfig` (set `API_KEY`)
 4. Build and run the project
 
 ## Usage
@@ -51,7 +51,7 @@ Access settings through the menu bar icon to:
 The app uses Google's Gemini API for text tailoring. To enable full functionality:
 
 1. Get a Gemini API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
-2. Replace `YOUR_GEMINI_API_KEY` in `GeminiService.swift` with your actual API key
+2. Add your API key to `Config.xcconfig` (copy from `Config.xcconfig.example`, set `API_KEY`)
 3. The app includes placeholder responses until the API key is configured
 
 ## Project Structure
