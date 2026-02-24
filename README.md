@@ -1,133 +1,76 @@
 # Tailor
 
-A macOS menu bar app that helps non-native English speakers improve their text using the Gemini API.
+> **Note:** I don’t know Swift—this was vibe-coded. The structure and style may be non-idiomatic. Improvements welcome.
+
+A macOS menu bar app that helps non-native English speakers improve their text. Copy text to the clipboard, press a hotkey, and get a polished version from ChatGPT or Gemini.
 
 ## Features
 
-- **Global Hotkey**: Press ⌘ + ⌥ + Z to tailor selected text anywhere in macOS
-- **Multiple Language Modes**: Choose from Formal, Casual, or Friendly tailoring styles
-- **Inline Popover**: Clean, minimal interface that appears below selected text
-- **Copy & Reload**: Easy copying of tailored text and regeneration options
-- **Menu Bar App**: Runs in the background with no dock icon
-- **Settings Window**: Configure language modes and view app information
+- **Menu bar app** – Runs in the background with a scissors icon; no Dock icon
+- **Global hotkey** – ⌘ + ⌥ + Z to tailor whatever is on the clipboard
+- **Two AI providers** – Choose **ChatGPT** (OpenAI) or **Gemini** in the menu (default: ChatGPT)
+- **Bring your own key** – Set your API key via **Tailor → Set API Key…**; stored in the system Keychain
+- **Result panel** – Tailored text in an editable panel; copy with the button or ⌘C, then OK to copy and close
 
 ## Requirements
 
-- macOS 14.0 or later
-- Xcode 15.0 or later
-- Gemini API key (for full functionality)
+- macOS 13.0 or later
+- Swift 5.9+ (Xcode or Swift CLI)
+- An API key for OpenAI (ChatGPT) and/or Google (Gemini)
 
 ## Installation
 
-1. Clone the repository
-2. Open `Tailor.xcodeproj` in Xcode
-3. Add your Gemini API key to `GeminiService.swift`
-4. Build and run the project
+1. Clone the repo.
+2. Build: `swift build -c release`
+3. Run the binary, or create an app bundle and DMG (see [Development](#development) below).
+4. On first run, open the menu bar icon → **Set API Key…** and paste your key (stored in Keychain).
 
 ## Usage
 
-1. **Launch the app**: The app will appear in your menu bar with a scissors icon
-2. **Select text**: Highlight any text in any application
-3. **Press hotkey**: Use ⌘ + ⌥ + Z to trigger the tailoring
-4. **Review results**: The tailored text will appear in a popover
-5. **Copy or reload**: Use the buttons to copy the text or generate a new version
-
-## Configuration
-
-### Language Modes
-
-- **Formal**: Professional and business-appropriate language
-- **Casual**: Relaxed and informal communication  
-- **Friendly**: Warm and approachable tone
-
-### Settings
-
-Access settings through the menu bar icon to:
-- Change the default language mode
-- View app information and features
-
-## API Integration
-
-The app uses Google's Gemini API for text tailoring. To enable full functionality:
-
-1. Get a Gemini API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
-2. Replace `YOUR_GEMINI_API_KEY` in `GeminiService.swift` with your actual API key
-3. The app includes placeholder responses until the API key is configured
-
-## Project Structure
-
-```
-Tailor/
-├── Models/
-│   └── LanguageMode.swift          # Language mode definitions
-├── Views/
-│   ├── TailorPopoverView.swift     # Main popover interface
-│   └── SettingsView.swift          # Settings window
-├── Controllers/
-│   └── HotkeyManager.swift         # Global hotkey handling
-├── Services/
-│   ├── GeminiService.swift         # API integration
-│   └── MarkdownLoader.swift        # Prompt loading
-├── Resources/
-│   ├── formal.md                   # Formal language prompts
-│   ├── casual.md                   # Casual language prompts
-│   └── friendly.md                 # Friendly language prompts
-├── AppDelegate.swift               # App lifecycle management
-├── SceneDelegate.swift             # Scene management
-├── TailorApp.swift                 # SwiftUI app entry point
-└── Info.plist                      # App configuration
-```
-
-## Architecture
-
-The app uses a hybrid SwiftUI + AppKit architecture:
-- **SwiftUI**: For modern UI components and data binding
-- **AppKit**: For menu bar integration, global hotkeys, and system-level features
-- **MVVM Pattern**: Clean separation of concerns with models, views, and services
-
-## Adding New Language Modes
-
-To add a new tailoring style:
-
-1. Add a new case to the `LanguageMode` enum in `LanguageMode.swift`
-2. Create a corresponding `.md` file in the `Resources` folder
-3. The app will automatically load and use the new mode
-
-## Development
-
-### Building
-
-```bash
-# Open in Xcode
-open Tailor.xcodeproj
-
-# Or build from command line
-xcodebuild -project Tailor.xcodeproj -scheme Tailor -configuration Debug
-```
-
-### Testing
-
-The app includes placeholder responses for testing without an API key. The mock responses demonstrate the different language modes.
+1. **Launch** – Run Tailor; the scissors icon appears in the menu bar.
+2. **Set API key** – Menu bar → **Tailor → Set API Key…** → paste key → Save.
+3. **Choose provider** – **Tailor → ChatGPT** or **Tailor → Gemini** (checkmark shows current).
+4. **Tailor text** – Copy some text (⌘C), then press **⌘⌥Z**. The app reads the clipboard, calls the selected AI, and shows the result in a panel.
+5. **Copy result** – Use **Copy** or **OK** (OK copies and closes). You can edit the text in the panel before copying.
 
 ## Permissions
 
-The app requires accessibility permissions to:
-- Monitor global hotkeys
-- Access selected text from other applications
+- **Accessibility** – Required for the global hotkey (⌘⌥Z). If the hotkey doesn’t work, add Tailor (or Terminal/iTerm if you run from CLI) in **System Settings → Privacy & Security → Accessibility**.
 
-These permissions will be requested when you first use the hotkey feature.
+## Project structure
+
+```
+Sources/Tailor/
+├── main.swift           # App entry, menu bar, hotkey, panels
+├── GPTService.swift     # OpenAI (gpt-4o-mini) tailor API
+├── GeminiService.swift  # Google Gemini tailor API
+├── TailorPrompt.swift   # Shared system prompt for tailoring
+└── KeychainStorage.swift # API key save/load via Keychain
+```
+
+- **TailorPrompt** – Single shared prompt (improve text for non-native English; output only revised text).
+- **Keychain** – API key is stored with the Security framework; no config files.
+
+## Development
+
+### Build and run
+
+```bash
+swift build -c release
+.build/release/Tailor
+```
+
+Or debug build: `swift build` then `swift run Tailor`.
+
+### App bundle and DMG
+
+To get a double-clickable app and a DMG for other Macs:
+
+1. After `swift build -c release`, create the app bundle (e.g. copy binary into `Tailor.app/Contents/MacOS/` and add `Contents/Info.plist` with `CFBundleExecutable`, `LSUIElement` = true, etc.).
+2. Create a DMG: e.g. `hdiutil create -volname "Tailor" -srcfolder Tailor.app -ov -format UDZO Tailor.dmg`.
+
+On another Mac, if the app is **unsigned**, Gatekeeper may show “damaged”. Use **Right-click → Open** once, or run: `xattr -cr Tailor.app`. For distribution, sign and notarize with an Apple Developer ID.
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
-
-## Support
-
-For issues and feature requests, please use the GitHub issues page.
+MIT.
