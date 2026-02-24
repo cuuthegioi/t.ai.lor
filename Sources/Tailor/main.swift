@@ -12,6 +12,10 @@ private var loadingPanel: NSPanel?
 /// Menu bar status item (retain so it stays visible)
 private var statusItem: NSStatusItem?
 
+private let providerKey = "TailorAIProvider"
+private let providerGPT = "gpt"
+private let providerGemini = "gemini"
+
 func main() {
     let app = NSApplication.shared
     app.setActivationPolicy(.accessory)
@@ -44,26 +48,169 @@ private func setupMenuBar() {
     }
 
     let menu = NSMenu()
-    let item1 = NSMenuItem(title: "Tailor clipboard (⌘⌥Z)", action: #selector(MenuBarTarget.tailorClipboard), keyEquivalent: "")
-    item1.target = MenuBarTarget.shared
-    menu.addItem(item1)
+    menu.delegate = MenuBarTarget.shared
+
+    let tailorItem = NSMenuItem(title: "Tailor clipboard (⌘⌥Z)", action: #selector(MenuBarTarget.tailorClipboard), keyEquivalent: "")
+    tailorItem.target = MenuBarTarget.shared
+    menu.addItem(tailorItem)
     menu.addItem(NSMenuItem.separator())
-    let item2 = NSMenuItem(title: "Quit", action: #selector(MenuBarTarget.quit), keyEquivalent: "q")
-    item2.target = MenuBarTarget.shared
-    menu.addItem(item2)
+
+    let chatGPTItem = NSMenuItem(title: "ChatGPT", action: #selector(MenuBarTarget.selectProvider(_:)), keyEquivalent: "")
+    chatGPTItem.target = MenuBarTarget.shared
+    chatGPTItem.tag = 1
+    menu.addItem(chatGPTItem)
+    let geminiItem = NSMenuItem(title: "Gemini", action: #selector(MenuBarTarget.selectProvider(_:)), keyEquivalent: "")
+    geminiItem.target = MenuBarTarget.shared
+    geminiItem.tag = 2
+    menu.addItem(geminiItem)
+    menu.addItem(NSMenuItem.separator())
+
+    let setKeyItem = NSMenuItem(title: "Set API Key…", action: #selector(MenuBarTarget.showSetAPIKeyModal), keyEquivalent: "")
+    setKeyItem.target = MenuBarTarget.shared
+    menu.addItem(setKeyItem)
+    menu.addItem(NSMenuItem.separator())
+
+    let quitItem = NSMenuItem(title: "Quit", action: #selector(MenuBarTarget.quit), keyEquivalent: "q")
+    quitItem.target = MenuBarTarget.shared
+    menu.addItem(quitItem)
 
     statusItem?.menu = menu
 }
 
-private class MenuBarTarget: NSObject {
+private func currentProvider() -> String {
+    UserDefaults.standard.string(forKey: providerKey) ?? providerGPT
+}
+
+private func saveProvider(_ value: String) {
+    UserDefaults.standard.set(value, forKey: providerKey)
+}
+
+/// API key: Keychain first (from "Set API Key"), then Config.xcconfig / environment.
+private func resolvedAPIKey() -> String? {
+    KeychainStorage.loadAPIKey() ?? getConfig("API_KEY")
+}
+
+private class MenuBarTarget: NSObject, NSMenuDelegate {
     static let shared = MenuBarTarget()
 
     @objc func tailorClipboard() {
         handleHotkey()
     }
 
+    @objc func selectProvider(_ sender: NSMenuItem) {
+        if sender.tag == 1 { saveProvider(providerGPT) }
+        else if sender.tag == 2 { saveProvider(providerGemini) }
+    }
+
+    @objc func showSetAPIKeyModal() {
+        showAPIKeyPanel()
+    }
+
     @objc func quit() {
         NSApp.terminate(nil)
+    }
+
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        let provider = currentProvider()
+        for item in menu.items {
+            if item.tag == 1 { item.state = provider == providerGPT ? .on : .off }
+            if item.tag == 2 { item.state = provider == providerGemini ? .on : .off }
+        }
+    }
+}
+
+private func showAPIKeyPanel() {
+    NSApp.activate(ignoringOtherApps: true)
+    let panelWidth: CGFloat = 400
+    let panelHeight: CGFloat = 200
+    let margin: CGFloat = 20
+    let textAreaWidth = panelWidth - 2 * margin
+    let textAreaHeight: CGFloat = 100
+    let buttonHeight: CGFloat = 28
+    let buttonWidth: CGFloat = 88
+
+    let panel = NSPanel(
+        contentRect: NSRect(x: 0, y: 0, width: panelWidth, height: panelHeight),
+        styleMask: [.titled, .closable],
+        backing: .buffered,
+        defer: false
+    )
+    panel.title = "Set API Key"
+    panel.isReleasedWhenClosed = false
+    panel.level = .floating
+    panel.standardWindowButton(.documentIconButton)?.isHidden = true
+
+    guard let contentView = panel.contentView else { return }
+
+    let label = NSTextField(labelWithString: "API Key (stored in Keychain):")
+    label.frame = NSRect(x: margin, y: panelHeight - margin - 18, width: textAreaWidth, height: 18)
+    label.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
+    contentView.addSubview(label)
+
+    let scrollView = NSScrollView(frame: NSRect(x: margin, y: panelHeight - margin - 18 - textAreaHeight - 8, width: textAreaWidth, height: textAreaHeight))
+    scrollView.hasVerticalScroller = true
+    scrollView.hasHorizontalScroller = false
+    scrollView.borderType = .bezelBorder
+    scrollView.autohidesScrollers = true
+
+    let textView = NSTextView(frame: scrollView.bounds)
+    textView.string = KeychainStorage.loadAPIKey() ?? ""
+    textView.isEditable = true
+    textView.isSelectable = true
+    textView.font = NSFont.systemFont(ofSize: NSFont.systemFontSize)
+    textView.textContainer?.containerSize = NSSize(width: scrollView.contentSize.width, height: .greatestFiniteMagnitude)
+    textView.textContainer?.widthTracksTextView = true
+    textView.minSize = NSSize(width: 0, height: 0)
+    textView.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
+    textView.isVerticallyResizable = true
+    textView.isHorizontallyResizable = false
+    textView.autoresizingMask = .width
+    scrollView.documentView = textView
+    contentView.addSubview(scrollView)
+
+    let cancelButton = NSButton(title: "Cancel", target: nil, action: #selector(APIKeyPanelHolder.cancelTapped))
+    cancelButton.frame = NSRect(x: margin, y: margin, width: buttonWidth, height: buttonHeight)
+    cancelButton.bezelStyle = .rounded
+    let saveButton = NSButton(title: "Save", target: nil, action: #selector(APIKeyPanelHolder.saveTapped))
+    saveButton.frame = NSRect(x: panelWidth - margin - buttonWidth, y: margin, width: buttonWidth, height: buttonHeight)
+    saveButton.bezelStyle = .rounded
+    saveButton.keyEquivalent = "\r"
+
+    let holder = APIKeyPanelHolder(panel: panel, textView: textView)
+    cancelButton.target = holder
+    saveButton.target = holder
+    contentView.addSubview(cancelButton)
+    contentView.addSubview(saveButton)
+
+    panel.center()
+    panel.makeKeyAndOrderFront(nil)
+    panel.makeFirstResponder(textView)
+    NSApp.runModal(for: panel)
+    panel.close()
+}
+
+private class APIKeyPanelHolder: NSObject {
+    let panel: NSPanel
+    let textView: NSTextView
+
+    init(panel: NSPanel, textView: NSTextView) {
+        self.panel = panel
+        self.textView = textView
+    }
+
+    @objc func cancelTapped() {
+        NSApp.stopModal()
+    }
+
+    @objc func saveTapped() {
+        let key = textView.string.trimmingCharacters(in: .whitespacesAndNewlines)
+        if KeychainStorage.saveAPIKey(key) {
+            NSApp.stopModal()
+        } else {
+            let alert = NSAlert()
+            alert.messageText = "Could not save to Keychain."
+            alert.runModal()
+        }
     }
 }
 
@@ -75,10 +222,16 @@ private func handleHotkey() {
             return
         }
         showLoadingPanel()
-        let apiKey = getConfig("API_KEY")
+        let apiKey = resolvedAPIKey()
+        let provider = currentProvider()
         Task {
             do {
-                let result = try await tailorWithGPT(text: text, apiKey: apiKey)
+                let result: String
+                if provider == providerGemini {
+                    result = try await tailorWithGemini(text: text, apiKey: apiKey)
+                } else {
+                    result = try await tailorWithGPT(text: text, apiKey: apiKey)
+                }
                 await MainActor.run {
                     hideLoadingPanel()
                     showResultPanel(text: result)
@@ -90,9 +243,18 @@ private func handleHotkey() {
                     if let gpt = error as? GPTError {
                         switch gpt {
                         case .missingApiKey:
-                            message = "Set API_KEY in Config.xcconfig or in your environment (e.g. API_KEY=your_key swift run Tailor)."
+                            message = "Set your API key via the menu bar: Tailor → Set API Key… (or use Config.xcconfig)."
                         case .invalidResponse:
                             message = "Invalid response from OpenAI."
+                        case .networkError(let e):
+                            message = e.localizedDescription
+                        }
+                    } else if let gemini = error as? GeminiError {
+                        switch gemini {
+                        case .missingApiKey:
+                            message = "Set your API key via the menu bar: Tailor → Set API Key… (or use Config.xcconfig)."
+                        case .invalidResponse:
+                            message = "Invalid response from Gemini."
                         case .networkError(let e):
                             message = e.localizedDescription
                         }
