@@ -9,7 +9,7 @@ enum GPTError: Error {
 /// OpenAI mini model (use gpt-5-mini when available if you prefer).
 private let gptModel = "gpt-4o-mini"
 
-func tailorWithGPT(text: String, apiKey: String?) async throws -> String {
+func tailorWithGPT(text: String, apiKey: String?, systemPrompt: String) async throws -> String {
     guard let apiKey = apiKey?.trimmingCharacters(in: .whitespacesAndNewlines), !apiKey.isEmpty else {
         throw GPTError.missingApiKey
     }
@@ -23,7 +23,7 @@ func tailorWithGPT(text: String, apiKey: String?) async throws -> String {
     let body: [String: Any] = [
         "model": gptModel,
         "messages": [
-            ["role": "system", "content": tailorSystemPrompt],
+            ["role": "system", "content": systemPrompt],
             ["role": "user", "content": "Text to tailor:\n\n\(text)"]
         ]
     ]
