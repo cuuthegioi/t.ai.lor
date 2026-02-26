@@ -13,17 +13,15 @@ func main() {
     app.setActivationPolicy(.accessory)
 
     statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-    if let item = statusItem {
-        MenuBar.setup(statusItem: item)
-    }
-
     hotkeyMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { event in
         let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
         if event.keyCode == keyCodeGrave && modifiers.contains(.command) {
             handleHotkey()
         }
     }
-
+    if let item = statusItem {
+        MenuBar.setup(statusItem: item, hotkeyRegistered: hotkeyMonitor != nil)
+    }
     if hotkeyMonitor == nil {
         print("Tailor: Global hotkey requires Accessibility permission (System Settings → Privacy & Security → Accessibility).")
     }

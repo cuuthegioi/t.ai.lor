@@ -1,7 +1,7 @@
 import AppKit
 
 enum MenuBar {
-    static func setup(statusItem: NSStatusItem) {
+    static func setup(statusItem: NSStatusItem, hotkeyRegistered: Bool = true) {
         guard let button = statusItem.button else { return }
 
         if let image = NSImage(systemSymbolName: "scissors", accessibilityDescription: "Tailor") {
@@ -13,6 +13,13 @@ enum MenuBar {
 
         let menu = NSMenu()
         menu.delegate = MenuBarTarget.shared
+
+        if !hotkeyRegistered {
+            let accessibilityItem = NSMenuItem(title: "⌘` not working? Open Accessibility Settings…", action: #selector(MenuBarTarget.openAccessibilitySettings), keyEquivalent: "")
+            accessibilityItem.target = MenuBarTarget.shared
+            menu.addItem(accessibilityItem)
+            menu.addItem(NSMenuItem.separator())
+        }
 
         let tailorItem = NSMenuItem(title: "Tailor clipboard (⌘`)", action: #selector(MenuBarTarget.tailorClipboard), keyEquivalent: "")
         tailorItem.target = MenuBarTarget.shared
@@ -67,6 +74,16 @@ final class MenuBarTarget: NSObject, NSMenuDelegate {
 
     @objc func quit() {
         NSApp.terminate(nil)
+    }
+
+    @objc func openAccessibilitySettings() {
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+            NSWorkspace.shared.open(url)
+        }
+        showAlert(
+            title: "Enable Tailor for ⌘`",
+            body: "1. In System Settings, add Tailor (or click + and choose Applications → Tailor).\n2. Turn Tailor ON.\n3. Quit and reopen Tailor, then try ⌘` again."
+        )
     }
 
     func menuNeedsUpdate(_ menu: NSMenu) {
