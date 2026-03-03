@@ -9,12 +9,12 @@ enum GeminiError: Error {
 /// Same model as points-estimator
 private let geminiModel = "gemini-2.0-flash"
 
-func tailorWithGemini(text: String, apiKey: String?) async throws -> String {
+func tailorWithGemini(text: String, apiKey: String?, systemPrompt: String) async throws -> String {
     guard let apiKey = apiKey?.trimmingCharacters(in: .whitespacesAndNewlines), !apiKey.isEmpty else {
         throw GeminiError.missingApiKey
     }
 
-    let prompt = tailorSystemPrompt + "\n\nText to tailor:\n" + text
+    let prompt = systemPrompt + "\n\nText to tailor:\n" + text
     let url = URL(string: "https://generativelanguage.googleapis.com/v1beta/models/\(geminiModel):generateContent")!
     var request = URLRequest(url: url)
     request.httpMethod = "POST"

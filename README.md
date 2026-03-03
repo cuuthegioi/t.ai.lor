@@ -7,7 +7,7 @@ A macOS menu bar app that helps non-native English speakers improve their text. 
 ## Features
 
 - **Menu bar app** – Runs in the background with a scissors icon; no Dock icon
-- **Global hotkey** – ⌘ + ⌥ + Z to tailor whatever is on the clipboard
+- **Global hotkey** – ⌘ + ` (Command + backtick) to tailor whatever is on the clipboard
 - **Two AI providers** – Choose **ChatGPT** (OpenAI) or **Gemini** in the menu (default: ChatGPT)
 - **Bring your own key** – Set your API key via **Tailor → Set API Key…**; stored in the system Keychain
 - **Result panel** – Tailored text in an editable panel; copy with the button or ⌘C, then OK to copy and close
@@ -30,12 +30,12 @@ A macOS menu bar app that helps non-native English speakers improve their text. 
 1. **Launch** – Run Tailor; the scissors icon appears in the menu bar.
 2. **Set API key** – Menu bar → **Tailor → Set API Key…** → paste key → Save.
 3. **Choose provider** – **Tailor → ChatGPT** or **Tailor → Gemini** (checkmark shows current).
-4. **Tailor text** – Copy some text (⌘C), then press **⌘⌥Z**. The app reads the clipboard, calls the selected AI, and shows the result in a panel.
+4. **Tailor text** – Copy some text (⌘C), then press **⌘`** (Command + backtick). The app reads the clipboard, calls the selected AI, and shows the result in a panel.
 5. **Copy result** – Use **Copy** or **OK** (OK copies and closes). You can edit the text in the panel before copying.
 
 ## Permissions
 
-- **Accessibility** – Required for the global hotkey (⌘⌥Z). If the hotkey doesn’t work, add Tailor (or Terminal/iTerm if you run from CLI) in **System Settings → Privacy & Security → Accessibility**.
+- **Accessibility** – Required for the global hotkey (⌘`). If the hotkey doesn’t work, add Tailor (or Terminal/iTerm if you run from CLI) in **System Settings → Privacy & Security → Accessibility**.
 
 ## Project structure
 
